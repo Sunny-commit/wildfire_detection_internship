@@ -1,384 +1,376 @@
-# 🔥 Wildfire Detection Internship Project
+# 🔥 Wildfire Detection - Deep Learning Computer Vision
 
-A **comprehensive deep learning project** for real-time forest wildfire detection using computer vision, image processing, and advanced ML models with weekly progressive implementation.
+A **computer vision system using deep learning** to detect and locate wildfires from satellite imagery and aerial footage, enabling early warning and forest fire prevention.
 
 ## 🎯 Overview
 
-This internship project implements wildfire detection systems through:
-- ✅ Satellite/aerial image analysis
-- ✅ Feature extraction via computer vision
-- ✅ Deep learning classification models
-- ✅ Real-time fire detection capability
-- ✅ Progressive weekly improvements and refinements
+This project provides:
+- ✅ Real-time fire detection
+- ✅ CNN-based image classification
+- ✅ Object detection (YOLO/Faster R-CNN)
+- ✅ Satellite imagery processing
+- ✅ Smoke detection
+- ✅ Geographic localization
+- ✅ Alert system
 
-## 🏗️ Project Architecture
-
-### Core Components
-- **Image Processing**: OpenCV, NumPy-based preprocessing
-- **Feature Engineering**: Spectral analysis, color space features
-- **Deep Learning**: CNN/ResNet models for classification
-- **Visualization**: Matplotlib/Seaborn for results
-- **Analysis Pipeline**: Multi-week iterative development
-
-### Tech Stack
-| Component | Technology |
-|-----------|-----------|
-| **Deep Learning** | TensorFlow, Keras, PyTorch |
-| **Computer Vision** | OpenCV, scikit-image |
-| **Data Science** | NumPy, Pandas, Scipy |
-| **Visualization** | Matplotlib, Seaborn, Plotly |
-| **Notebooks** | Jupyter for interactive development |
-
-## 📁 Project Structure
-
-```
-wildfire_detection_internship/
-├── week_2_wildfire_detection.py          # Week 2 implementation
-├── week_3_wildfire_detection (1).py      # Week 3 enhanced model
-├── wildfire_detection.ipynb              # Main Jupyter notebook (708KB)
-├── Test_plant_disease-checkpoint.ipynb   # Testing pipeline
-├── README.md                             # Documentation
-├── Forest_fire_detection_project[1].pptx # Presentation slides
-└── [Model weights & datasets]
-```
-
-## 🔧 Progressive Development Phases
-
-### Week 2: Foundation & Basic Detection
-- **File**: `week_2_wildfire_detection.py` (4.3 KB)
-- **Focus**: 
-  - Initial image loading & preprocessing
-  - Basic feature extraction
-  - Simple classification baseline
-  - Accuracy evaluation metrics
-
-### Week 3: Advanced Implementation
-- **File**: `week_3_wildfire_detection (1).py` (6.3 KB)
-- **Enhancements**:
-  - Improved model architecture
-  - Enhanced feature engineering
-  - Better handling of edge cases
-  - Performance optimization
-
-### Full Project: Comprehensive Pipeline
-- **File**: `wildfire_detection.ipynb` (708 KB)
-- **Contains**:
-  - Data loading & exploration
-  - EDA (Exploratory Data Analysis)
-  - Multiple model architectures
-  - Hyperparameter tuning
-  - Performance comparison
-  - Visualization & results
-
-## 🔬 Technical Implementation
-
-### Image Processing Pipeline
-```
-Raw Satellite/Aerial Image
-    ↓
-[Preprocessing]
-- Resize to standard dimensions (224x224)
-- Normalize pixel values (0-1 range)
-- Color space conversion (RGB/HSV/LAB)
-    ↓
-[Feature Extraction]
-- Spectral features (color channels)
-- Texture features (GLCM, LBP)
-- Shape features (contours, moments)
-    ↓
-[Deep Learning Model]
-- CNN architecture for classification
-- ResNet/EfficientNet backbone
-    ↓
-[Prediction & Confidence]
-- Fire/No-fire classification
-- Confidence score output
-```
-
-### Deep Learning Models
-
-**CNN Architecture**
-```python
-Input: (224, 224, 3) images
-    ↓
-Conv + ReLU + MaxPool (repeated)
-    ↓
-Flatten + Dense layers
-    ↓
-Output: Fire/No-fire probability
-```
-
-**Feature-Based Approach**
-```
-RGB Channels Analysis
-├── Red channel intensity (high in fire)
-├── Green channel characteristics
-├── Blue channel patterns
-├── HSV color space (Hue saturation)
-└── Combination features
-```
-
-## 🚀 Setup & Installation
-
-### Prerequisites
-- Python 3.8+
-- Jupyter Notebook/Lab
-- GPU support (highly recommended for training)
-
-### Step 1: Clone Repository
-```bash
-git clone https://github.com/Sunny-commit/wildfire_detection_internship.git
-cd wildfire_detection_internship
-```
-
-### Step 2: Install Dependencies
-```bash
-pip install numpy pandas scipy matplotlib seaborn opencv-python
-pip install tensorflow keras scikit-image scikit-learn
-pip install jupyter notebook ipython
-```
-
-### Step 3: Run Jupyter Notebook
-```bash
-jupyter notebook wildfire_detection.ipynb
-```
-
-### Step 4: Run Python Scripts (Optional)
-```bash
-# Week 2 implementation
-python week_2_wildfire_detection.py
-
-# Week 3 enhanced version
-python "week_3_wildfire_detection (1).py"
-```
-
-## 📊 Key Models & Techniques
-
-### Convolutional Neural Networks (CNN)
-- Multiple convolutional layers for feature maps
-- Max pooling for dimensionality reduction
-- Dropout for regularization
-- Batch normalization for stable training
-
-### Data Augmentation
-- Random rotation (±15 degrees)
-- Horizontal/vertical flips
-- Brightness/contrast adjustments
-- Zoom transformations
-- Color jittering
-
-### Loss Functions & Metrics
-- **Loss**: Binary Crossentropy (fire vs. no-fire)
-- **Metrics**: 
-  - Accuracy: Overall correctness
-  - Precision: False positive rate
-  - Recall: False negative rate (critical for safety)
-  - F1-Score: Balanced metric
-  - ROC-AUC: Model discrimination ability
-
-### Training Configuration
-- **Optimizer**: Adam with learning rate scheduling
-- **Batch Size**: 32-64 images per batch
-- **Epochs**: 50-100 with early stopping
-- **Validation Split**: 20% for model evaluation
-
-## 💡 Usage Guide
-
-### Running Full Pipeline (Notebook)
+## 📸 Data & Preprocessing
 
 ```python
-# 1. Load data
 import tensorflow as tf
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow import keras
+from tensorflow.keras import layers
+import cv2
+import numpy as np
 
-# 2. Prepare dataset
-train_datagen = ImageDataGenerator(
-    rescale=1./255,
-    rotation_range=20,
-    horizontal_flip=True
-)
-
-# 3. Build model
-model = tf.keras.Sequential([
-    tf.keras.layers.Conv2D(32, (3,3), activation='relu', input_shape=(224,224,3)),
-    tf.keras.layers.MaxPooling2D((2,2)),
-    tf.keras.layers.Conv2D(64, (3,3), activation='relu'),
-    tf.keras.layers.MaxPooling2D((2,2)),
-    tf.keras.layers.Flatten(),
-    tf.keras.layers.Dense(128, activation='relu'),
-    tf.keras.layers.Dropout(0.5),
-    tf.keras.layers.Dense(1, activation='sigmoid')
-])
-
-# 4. Compile & train
-model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
-history = model.fit(train_data, epochs=50, validation_data=val_data)
-
-# 5. Evaluate
-test_loss, test_acc = model.evaluate(test_data)
+class WildfireDataPreprocessor:
+    """Prepare satellite/aerial imagery"""
+    
+    @staticmethod
+    def load_and_preprocess(image_path, target_size=(256, 256)):
+        """Load and preprocess satellite image"""
+        # Read image
+        img = cv2.imread(image_path)
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        
+        # Resize
+        img = cv2.resize(img, target_size)
+        
+        # Normalize
+        img = img / 255.0
+        
+        return img
+    
+    @staticmethod
+    def enhance_fire_visibility(img):
+        """Enhance fire regions for detection"""
+        # Convert to HSV (fire has high red/orange)
+        hsv = cv2.cvtColor((img * 255).astype(np.uint8), cv2.COLOR_RGB2HSV)
+        
+        # Red and orange lower/upper bounds
+        lower_red = np.array([0, 50, 50])
+        upper_red = np.array([10, 255, 255])
+        
+        lower_orange = np.array([10, 100, 100])
+        upper_orange = np.array([25, 255, 255])
+        
+        # Create masks
+        mask1 = cv2.inRange(hsv, lower_red, upper_red)
+        mask2 = cv2.inRange(hsv, lower_orange, upper_orange)
+        
+        fire_mask = cv2.bitwise_or(mask1, mask2)
+        
+        return fire_mask
+    
+    @staticmethod
+    def apply_edge_detection(img):
+        """Detect fire edges"""
+        gray = cv2.cvtColor((img * 255).astype(np.uint8), cv2.COLOR_RGB2GRAY)
+        edges = cv2.Canny(gray, 50, 150)
+        return edges
 ```
 
-### Running Python Scripts
-
-```bash
-# Week 2 - Baseline detection
-python week_2_wildfire_detection.py <image_path>
-
-# Week 3 - Advanced detection
-python "week_3_wildfire_detection (1).py" <image_path>
-```
-
-## 🎯 Model Performance Metrics
-
-| Metric | Target | Notes |
-|--------|--------|-------|
-| **Overall Accuracy** | 85-92% | Balanced across classes |
-| **Recall (Fire)** | 90%+ | Minimize false negatives (critical) |
-| **Precision** | 85%+ | Minimize false alarms |
-| **F1-Score** | 88%+ | Balanced metric |
-
-### Performance Evaluation
-```python
-from sklearn.metrics import classification_report, confusion_matrix
-
-# Generate metrics
-print(classification_report(y_true, y_pred))
-print("Confusion Matrix:\n", confusion_matrix(y_true, y_pred))
-```
-
-## 🔄 Data Flow
-
-```
-Satellite/Aerial Images
-    ↓
-[Week 2 - Basic Detection]
-├── Image preprocessing
-├── Simple feature extraction
-├── Baseline classification
-└── Performance metrics
-    ↓
-[Week 3 - Enhancement]
-├── Improved preprocessing
-├── Advanced feature engineering
-├── Better model architecture
-└── Performance improvement
-    ↓
-[Full Project - Production Ready]
-├── Comprehensive pipeline
-├── Multiple models
-├── Hyperparameter optimization
-├── Real-time inference capability
-└── Complete evaluation suite
-```
-
-## 📈 Key Achievements
-
-- Progressive development from baseline to production-ready system
-- High recall rate for fire detection (primary objective)
-- Comprehensive model comparison and evaluation
-- Real-world applicable solution for wildfire prevention
-- Documented development process in presentation
-
-## 🎓 Learning Outcomes
-
-### Computer Vision
-- Image preprocessing techniques
-- Feature extraction methods
-- Color space analysis
-- Texture and shape analysis
-
-### Deep Learning
-- CNN architecture design
-- Model training & validation
-- Regularization techniques
-- Hyperparameter tuning
-
-### Data Science
-- Exploratory data analysis
-- Train/test split strategies
-- Performance metrics interpretation
-- Model evaluation methodology
-
-## 🛠️ Advanced Features
-
-### Custom Loss Functions
-- Weighted binary crossentropy (penalize false negatives more)
-- Focal loss for imbalanced datasets
-- Custom metrics for domain-specific needs
-
-### Model Interpretability
-- GradCAM for activation visualization
-- Feature importance analysis
-- Decision boundary visualization
-
-### Production Optimization
-- Model quantization for edge devices
-- Model conversion (TensorFlow → TFLite)
-- Inference time optimization
-
-## 📊 Visualization Capabilities
+## 🏗️ Fire Detection CNN
 
 ```python
-# Training history
-plt.plot(history.history['accuracy'], label='Training')
-plt.plot(history.history['val_accuracy'], label='Validation')
-
-# Confusion matrix
-sns.heatmap(confusion_matrix(y_true, y_pred), annot=True)
-
-# ROC Curve
-from sklearn.metrics import roc_curve, auc
-fpr, tpr, _ = roc_curve(y_true, y_pred_proba)
-plt.plot(fpr, tpr, label=f'AUC = {auc(fpr, tpr):.3f}')
+class WildfireDetectionCNN:
+    """Binary classifier: Fire vs No Fire"""
+    
+    def __init__(self, input_shape=(256, 256, 3)):
+        self.input_shape = input_shape
+        self.model = self._build_model()
+    
+    def _build_model(self):
+        """Build fire detection model"""
+        model = keras.Sequential([
+            # Block 1
+            layers.Conv2D(32, (3, 3), activation='relu', padding='same', 
+                         input_shape=self.input_shape),
+            layers.BatchNormalization(),
+            layers.MaxPooling2D((2, 2)),
+            layers.Dropout(0.2),
+            
+            # Block 2
+            layers.Conv2D(64, (3, 3), activation='relu', padding='same'),
+            layers.BatchNormalization(),
+            layers.MaxPooling2D((2, 2)),
+            layers.Dropout(0.2),
+            
+            # Block 3
+            layers.Conv2D(128, (3, 3), activation='relu', padding='same'),
+            layers.BatchNormalization(),
+            layers.MaxPooling2D((2, 2)),
+            layers.Dropout(0.2),
+            
+            # Block 4
+            layers.Conv2D(256, (3, 3), activation='relu', padding='same'),
+            layers.BatchNormalization(),
+            layers.MaxPooling2D((2, 2)),
+            layers.Dropout(0.3),
+            
+            # FC Layers
+            layers.Flatten(),
+            layers.Dense(512, activation='relu'),
+            layers.Dropout(0.5),
+            layers.Dense(256, activation='relu'),
+            layers.Dropout(0.5),
+            layers.Dense(1, activation='sigmoid')  # Binary classification
+        ])
+        
+        model.compile(
+            optimizer=keras.optimizers.Adam(0.001),
+            loss='binary_crossentropy',
+            metrics=['accuracy', keras.metrics.Precision(), keras.metrics.Recall()]
+        )
+        
+        return model
 ```
 
-## 🔐 Deployment Considerations
+## 🎯 Object Detection - Fire Localization
 
-- **Image Size Handling**: Normalize to 224x224 for consistency
-- **Real-time Processing**: Batch images for GPU efficiency
-- **Model Serving**: TensorFlow Serving or FastAPI
-- **Edge Devices**: Quantized models for drones/edge processors
+```python
+class WildfireObjectDetector:
+    """Detect and localize fire regions"""
+    
+    def __init__(self, num_classes=2):  # background, fire
+        self.num_classes = num_classes
+        self.model = self._build_detector()
+    
+    def _build_detector(self):
+        """Build object detection model"""
+        # Simple region-based approach
+        model = keras.Sequential([
+            layers.Conv2D(32, (3, 3), activation='relu', input_shape=(512, 512, 3)),
+            layers.MaxPooling2D((2, 2)),
+            
+            layers.Conv2D(64, (3, 3), activation='relu'),
+            layers.MaxPooling2D((2, 2)),
+            
+            layers.Conv2D(128, (3, 3), activation='relu'),
+            layers.MaxPooling2D((2, 2)),
+            
+            # Output: 4 bbox coordinates per region
+            layers.Flatten(),
+            layers.Dense(128, activation='relu'),
+            layers.Dense(4)  # Bounding box: x, y, w, h
+        ])
+        
+        return model
+    
+    @staticmethod
+    def post_process_detections(predictions, confidence_threshold=0.5):
+        """Filter and process detections"""
+        filtered = []
+        
+        for pred in predictions:
+            if pred[-1] >= confidence_threshold:  # confidence score
+                filtered.append(pred)
+        
+        return filtered
+    
+    @staticmethod
+    def draw_bboxes(image, bboxes):
+        """Draw bounding boxes on image"""
+        img_copy = image.copy()
+        
+        for bbox in bboxes:
+            x, y, w, h = bbox[:4]
+            cv2.rectangle(img_copy, (int(x), int(y)), 
+                         (int(x + w), int(y + h)), (0, 255, 0), 2)
+        
+        return img_copy
+```
 
-## 🔄 Iterative Improvements
+## 💨 Smoke Detection
 
-Each week builds upon the previous:
-- Week 2 → Week 3: Architecture refinements
-- Week 3 → Full Project: Production optimization
-- Continuous evaluation & metric tracking
-- Regular model updates based on new data
+```python
+class SmokeDetector:
+    """Detect smoke regions"""
+    
+    @staticmethod
+    def detect_smoke(image):
+        """Detect gray/white smoke regions"""
+        hsv = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
+        
+        # Smoke: Low saturation, medium-high value
+        lower_smoke = np.array([0, 0, 100])
+        upper_smoke = np.array([255, 50, 255])
+        
+        smoke_mask = cv2.inRange(hsv, lower_smoke, upper_smoke)
+        
+        # Remove small noise
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+        smoke_mask = cv2.morphologyEx(smoke_mask, cv2.MORPH_CLOSE, kernel)
+        
+        return smoke_mask
+    
+    @staticmethod
+    def find_smoke_contours(smoke_mask, min_area=100):
+        """Find smoke regions"""
+        contours, _ = cv2.findContours(smoke_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        
+        detected_regions = []
+        for contour in contours:
+            area = cv2.contourArea(contour)
+            if area > min_area:
+                x, y, w, h = cv2.boundingRect(contour)
+                detected_regions.append((x, y, w, h))
+        
+        return detected_regions
+```
 
-## 📚 References & Resources
+## 📍 Geographic Localization
 
-- [TensorFlow Documentation](https://www.tensorflow.org/guide)
-- [OpenCV Tutorials](https://docs.opencv.org/)
-- [Deep Learning Specialization](https://www.deeplearning.ai/)
-- [Wildfire Detection Papers](https://arxiv.org/)
+```python
+class GeoLocalization:
+    """Map fire locations using GPS/coordinates"""
+    
+    def __init__(self, satellite_bounds):
+        """
+        satellite_bounds: (lon_min, lon_max, lat_min, lat_max)
+        """
+        self.bounds = satellite_bounds
+    
+    def pixel_to_geo_coords(self, pixel_x, pixel_y, image_shape):
+        """Convert pixel coordinates to lat/lon"""
+        img_height, img_width = image_shape
+        
+        lon_min, lon_max, lat_min, lat_max = self.bounds
+        
+        # Map pixel to geographic coordinates
+        lon = lon_min + (pixel_x / img_width) * (lon_max - lon_min)
+        lat = lat_max - (pixel_y / img_height) * (lat_max - lat_min)
+        
+        return lat, lon
+    
+    def generate_alerts(self, detections, image_shape):
+        """Generate location-based alerts"""
+        alerts = []
+        
+        for det in detections:
+            pixel_x, pixel_y = det[:2]
+            lat, lon = self.pixel_to_geo_coords(pixel_x, pixel_y, image_shape)
+            
+            alert = {
+                'latitude': lat,
+                'longitude': lon,
+                'confidence': det[4] if len(det) > 4 else None
+            }
+            alerts.append(alert)
+        
+        return alerts
+```
 
-## 🤝 Contributing
+## 🚨 Alert & Monitoring System
 
-Contributions and improvements welcome! Areas for enhancement:
-- Multi-spectral satellite data integration
-- Real-time streaming inference
-- Edge deployment optimization
-- Transfer learning from larger datasets
+```python
+class FireAlertSystem:
+    """Real-time monitoring and alerts"""
+    
+    def __init__(self, confidence_threshold=0.7):
+        self.threshold = confidence_threshold
+        self.alerts_history = []
+    
+    def process_image(self, image, detector_model):
+        """Process incoming image"""
+        # Predict
+        prediction = detector_model.predict(np.expand_dims(image, 0))
+        
+        # Generate alert if fire detected
+        if prediction[0][0] > self.threshold:
+            alert = {
+                'timestamp': pd.Timestamp.now(),
+                'confidence': float(prediction[0][0]),
+                'status': 'FIRE DETECTED'
+            }
+            self.alerts_history.append(alert)
+            return alert
+        
+        return None
+    
+    def send_alert(self, alert, channels=['email', 'sms', 'push']):
+        """Send multi-channel alert"""
+        for channel in channels:
+            if channel == 'email':
+                # Email notification
+                pass
+            elif channel == 'sms':
+                # SMS notification
+                pass
+            elif channel == 'push':
+                # Push notification
+                pass
+```
 
-## 📝 Presentation
+## 📊 Model Training
 
-See `Forest_fire_detection_project[1].pptx` for comprehensive project presentation including:
-- Problem statement & motivation
-- Data collection methodology
-- Model architecture diagrams
-- Results & performance metrics
-- Future work & improvements
+```python
+class WildfireTrainer:
+    """Train detection model"""
+    
+    def __init__(self, model):
+        self.model = model
+    
+    def train(self, train_gen, val_gen, epochs=50):
+        """Train with generators"""
+        callbacks = [
+            keras.callbacks.EarlyStopping(
+                monitor='val_loss', 
+                patience=5,
+                restore_best_weights=True
+            ),
+            keras.callbacks.ReduceLROnPlateau(
+                monitor='val_loss',
+                factor=0.5,
+                patience=3
+            ),
+            keras.callbacks.ModelCheckpoint(
+                'best_fire_detector.h5',
+                monitor='val_accuracy',
+                save_best_only=True
+            )
+        ]
+        
+        history = self.model.fit(
+            train_gen,
+            validation_data=val_gen,
+            epochs=epochs,
+            callbacks=callbacks
+        )
+        
+        return history
+```
 
-## 📄 License
+## 💡 Interview Talking Points
 
-Open source for educational and research purposes.
+**Q: Why critical for early detection?**
+```
+Answer:
+- Minutes matter in wildfire prevention
+- Quick response maximizes containment
+- Reduces property/life loss
+- AI enables 24/7 monitoring
+```
 
-## 🌟 Key Takeaways
+**Q: Challenges in this domain?**
+```
+Answer:
+- Variable conditions (weather, time of day)
+- Class imbalance (few fire images)
+- Real-time processing requirements
+- Geographic variation
+```
 
-✅ Progressive development from simple to advanced models
-✅ Comprehensive testing & evaluation framework
-✅ Production-ready deep learning pipeline
-✅ Real-world application for environmental protection
-✅ Detailed documentation and presentation materials
+## 🌟 Portfolio Value
+
+✅ CNN for fire detection
+✅ Object detection & localization
+✅ Smoke pattern recognition
+✅ Real-time processing
+✅ Geographic information systems
+✅ Critical infrastructure application
+✅ Alert system design
+
+---
+
+**Technologies**: TensorFlow, Keras, OpenCV, NumPy
+
