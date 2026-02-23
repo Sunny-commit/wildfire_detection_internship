@@ -1,376 +1,348 @@
-# 🔥 Wildfire Detection - Deep Learning Computer Vision
+# 🎥 Wildfire Detection using CNN - Computer Vision
 
-A **computer vision system using deep learning** to detect and locate wildfires from satellite imagery and aerial footage, enabling early warning and forest fire prevention.
+A **deep learning system for detecting wildfires** from satellite and aerial imagery using convolutional neural networks and real-time alert systems.
 
 ## 🎯 Overview
 
 This project provides:
-- ✅ Real-time fire detection
-- ✅ CNN-based image classification
-- ✅ Object detection (YOLO/Faster R-CNN)
-- ✅ Satellite imagery processing
-- ✅ Smoke detection
-- ✅ Geographic localization
-- ✅ Alert system
+- ✅ CNN for fire detection
+- ✅ Object detection (YOLO)
+- ✅ Satellite/aerial image processing
+- ✅ Smoke detection algorithms
+- ✅ Geolocation services
+- ✅ Real-time alerting
+- ✅ Multiple model architectures
 
-## 📸 Data & Preprocessing
+## 📷 Image Preprocessing
 
 ```python
-import tensorflow as tf
-from tensorflow import keras
-from tensorflow.keras import layers
 import cv2
 import numpy as np
+from PIL import Image
+import tensorflow as tf
 
-class WildfireDataPreprocessor:
-    """Prepare satellite/aerial imagery"""
+class FireImageProcessor:
+    """Process satellite imagery"""
     
-    @staticmethod
-    def load_and_preprocess(image_path, target_size=(256, 256)):
-        """Load and preprocess satellite image"""
-        # Read image
-        img = cv2.imread(image_path)
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        
-        # Resize
-        img = cv2.resize(img, target_size)
-        
-        # Normalize
-        img = img / 255.0
-        
-        return img
+    def __init__(self):
+        self.target_size = (224, 224)
     
-    @staticmethod
-    def enhance_fire_visibility(img):
-        """Enhance fire regions for detection"""
-        # Convert to HSV (fire has high red/orange)
-        hsv = cv2.cvtColor((img * 255).astype(np.uint8), cv2.COLOR_RGB2HSV)
-        
-        # Red and orange lower/upper bounds
-        lower_red = np.array([0, 50, 50])
-        upper_red = np.array([10, 255, 255])
-        
-        lower_orange = np.array([10, 100, 100])
-        upper_orange = np.array([25, 255, 255])
-        
-        # Create masks
-        mask1 = cv2.inRange(hsv, lower_red, upper_red)
-        mask2 = cv2.inRange(hsv, lower_orange, upper_orange)
-        
-        fire_mask = cv2.bitwise_or(mask1, mask2)
-        
-        return fire_mask
+    def load_image(self, image_path):
+        """Load and resize"""
+        image = cv2.imread(image_path)
+        image = cv2.resize(image, self.target_size)
+        return image
     
-    @staticmethod
-    def apply_edge_detection(img):
-        """Detect fire edges"""
-        gray = cv2.cvtColor((img * 255).astype(np.uint8), cv2.COLOR_RGB2GRAY)
-        edges = cv2.Canny(gray, 50, 150)
-        return edges
+    def extract_bands(self, image):
+        """Extract color channels"""
+        r, g, b = cv2.split(image)
+        
+        # Normalized Difference Vegetation Index
+        ndvi = (b.astype(float) - r.astype(float)) / (b + r + 1e-6)
+        
+        # Normalized Difference Burn Ratio (fire indicator)
+        ndbr = ((g - r) / (g + r + 1e-6) + 1) / 2
+        
+        return {
+            'red': r,
+            'green': g,
+            'blue': b,
+            'ndvi': ndvi,
+            'ndbr': ndbr
+        }
+    
+    def contrast_enhancement(self, image):
+        """Enhance image contrast"""
+        lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
+        l, a, b = cv2.split(lab)
+        
+        clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
+        l = clahe.apply(l)
+        
+        enhanced = cv2.merge([l, a, b])
+        enhanced = cv2.cvtColor(enhanced, cv2.COLOR_LAB2BGR)
+        
+        return enhanced
+    
+    def normalize(self, image):
+        """Normalize for model"""
+        image = image.astype('float32') / 255.0
+        return image
 ```
 
-## 🏗️ Fire Detection CNN
+## 🔥 Fire Detection CNN
 
 ```python
-class WildfireDetectionCNN:
-    """Binary classifier: Fire vs No Fire"""
+from tensorflow.keras.models import Sequential, Model
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Dense, Flatten, Dropout, Input
+from tensorflow.keras.applications import ResNet50, MobileNetV2
+
+class FireDetectionCNN:
+    """Custom CNN for fire detection"""
     
-    def __init__(self, input_shape=(256, 256, 3)):
+    def __init__(self, input_shape=(224, 224, 3)):
         self.input_shape = input_shape
-        self.model = self._build_model()
+        self.model = None
     
-    def _build_model(self):
-        """Build fire detection model"""
-        model = keras.Sequential([
-            # Block 1
-            layers.Conv2D(32, (3, 3), activation='relu', padding='same', 
-                         input_shape=self.input_shape),
-            layers.BatchNormalization(),
-            layers.MaxPooling2D((2, 2)),
-            layers.Dropout(0.2),
-            
-            # Block 2
-            layers.Conv2D(64, (3, 3), activation='relu', padding='same'),
-            layers.BatchNormalization(),
-            layers.MaxPooling2D((2, 2)),
-            layers.Dropout(0.2),
-            
-            # Block 3
-            layers.Conv2D(128, (3, 3), activation='relu', padding='same'),
-            layers.BatchNormalization(),
-            layers.MaxPooling2D((2, 2)),
-            layers.Dropout(0.2),
-            
-            # Block 4
-            layers.Conv2D(256, (3, 3), activation='relu', padding='same'),
-            layers.BatchNormalization(),
-            layers.MaxPooling2D((2, 2)),
-            layers.Dropout(0.3),
-            
-            # FC Layers
-            layers.Flatten(),
-            layers.Dense(512, activation='relu'),
-            layers.Dropout(0.5),
-            layers.Dense(256, activation='relu'),
-            layers.Dropout(0.5),
-            layers.Dense(1, activation='sigmoid')  # Binary classification
+    def build_model(self):
+        """Build custom architecture"""
+        self.model = Sequential([
+            Conv2D(32, (3, 3), activation='relu', input_shape=self.input_shape),
+            MaxPooling2D((2, 2)),
+            Conv2D(64, (3, 3), activation='relu'),
+            MaxPooling2D((2, 2)),
+            Conv2D(64, (3, 3), activation='relu'),
+            MaxPooling2D((2, 2)),
+            Conv2D(128, (3, 3), activation='relu'),
+            MaxPooling2D((2, 2)),
+            Flatten(),
+            Dense(512, activation='relu'),
+            Dropout(0.5),
+            Dense(256, activation='relu'),
+            Dropout(0.5),
+            Dense(1, activation='sigmoid')
         ])
         
-        model.compile(
-            optimizer=keras.optimizers.Adam(0.001),
+        self.model.compile(
+            optimizer='adam',
             loss='binary_crossentropy',
-            metrics=['accuracy', keras.metrics.Precision(), keras.metrics.Recall()]
+            metrics=['accuracy', tf.keras.metrics.AUC()]
+        )
+        
+        return self.model
+    
+    def train(self, X_train, y_train, X_val, y_val, epochs=50):
+        """Train model"""
+        history = self.model.fit(
+            X_train, y_train,
+            validation_data=(X_val, y_val),
+            epochs=epochs,
+            batch_size=32,
+            verbose=1
+        )
+        
+        return history
+```
+
+## 🔧 Transfer Learning
+
+```python
+class FireDetectionTransferLearning:
+    """Pre-trained models for fire detection"""
+    
+    @staticmethod
+    def resnet50_model(input_shape=(224, 224, 3)):
+        """Fine-tune ResNet50"""
+        base_model = ResNet50(
+            weights='imagenet',
+            include_top=False,
+            input_shape=input_shape
+        )
+        
+        # Freeze base layers
+        base_model.trainable = False
+        
+        # Add custom head
+        inputs = Input(shape=input_shape)
+        x = base_model(inputs)
+        x = tf.keras.layers.GlobalAveragePooling2D()(x)
+        x = Dense(256, activation='relu')(x)
+        x = Dropout(0.5)(x)
+        outputs = Dense(1, activation='sigmoid')(x)
+        
+        model = Model(inputs, outputs)
+        model.compile(
+            optimizer='adam',
+            loss='binary_crossentropy',
+            metrics=['accuracy']
+        )
+        
+        return model, base_model
+    
+    @staticmethod
+    def mobilenet_model(input_shape=(224, 224, 3)):
+        """Lightweight MobileNet"""
+        base_model = MobileNetV2(
+            weights='imagenet',
+            include_top=False,
+            input_shape=input_shape
+        )
+        
+        base_model.trainable = False
+        
+        inputs = Input(shape=input_shape)
+        x = base_model(inputs)
+        x = tf.keras.layers.GlobalAveragePooling2D()(x)
+        x = Dense(128, activation='relu')(x)
+        outputs = Dense(1, activation='sigmoid')(x)
+        
+        model = Model(inputs, outputs)
+        model.compile(
+            optimizer='adam',
+            loss='binary_crossentropy',
+            metrics=['accuracy']
         )
         
         return model
+    
+    @staticmethod
+    def unfreeze_layers(base_model, num_layers=50):
+        """Progressive unfreezing"""
+        for layer in base_model.layers[-num_layers:]:
+            layer.trainable = True
 ```
 
-## 🎯 Object Detection - Fire Localization
+## 🔍 Object Detection (YOLO)
 
 ```python
-class WildfireObjectDetector:
-    """Detect and localize fire regions"""
+class FireObjectDetector:
+    """Detect fire locations"""
     
-    def __init__(self, num_classes=2):  # background, fire
-        self.num_classes = num_classes
-        self.model = self._build_detector()
+    def __init__(self):
+        # Would use pre-trained YOLO weights
+        self.detector = None
     
-    def _build_detector(self):
-        """Build object detection model"""
-        # Simple region-based approach
-        model = keras.Sequential([
-            layers.Conv2D(32, (3, 3), activation='relu', input_shape=(512, 512, 3)),
-            layers.MaxPooling2D((2, 2)),
-            
-            layers.Conv2D(64, (3, 3), activation='relu'),
-            layers.MaxPooling2D((2, 2)),
-            
-            layers.Conv2D(128, (3, 3), activation='relu'),
-            layers.MaxPooling2D((2, 2)),
-            
-            # Output: 4 bbox coordinates per region
-            layers.Flatten(),
-            layers.Dense(128, activation='relu'),
-            layers.Dense(4)  # Bounding box: x, y, w, h
-        ])
+    def detect_fire_regions(self, image, confidence_threshold=0.5):
+        """Find fire bounding boxes"""
+        # Using a simplified version
+        results = self.detector.predict(image)
         
-        return model
+        fire_boxes = []
+        for detection in results:
+            if detection['class'] == 'fire' and detection['confidence'] > confidence_threshold:
+                fire_boxes.append({
+                    'bbox': detection['bbox'],
+                    'confidence': detection['confidence'],
+                    'area': self._calculate_area(detection['bbox'])
+                })
+        
+        return fire_boxes
     
-    @staticmethod
-    def post_process_detections(predictions, confidence_threshold=0.5):
-        """Filter and process detections"""
-        filtered = []
-        
-        for pred in predictions:
-            if pred[-1] >= confidence_threshold:  # confidence score
-                filtered.append(pred)
-        
-        return filtered
-    
-    @staticmethod
-    def draw_bboxes(image, bboxes):
-        """Draw bounding boxes on image"""
-        img_copy = image.copy()
-        
-        for bbox in bboxes:
-            x, y, w, h = bbox[:4]
-            cv2.rectangle(img_copy, (int(x), int(y)), 
-                         (int(x + w), int(y + h)), (0, 255, 0), 2)
-        
-        return img_copy
+    def _calculate_area(self, bbox):
+        """Calculate bounding box area"""
+        x1, y1, x2, y2 = bbox
+        return (x2 - x1) * (y2 - y1)
 ```
 
 ## 💨 Smoke Detection
 
 ```python
 class SmokeDetector:
-    """Detect smoke regions"""
+    """Detect wildfire smoke"""
     
     @staticmethod
-    def detect_smoke(image):
-        """Detect gray/white smoke regions"""
-        hsv = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
+    def detect_smoke_color(image):
+        """Smoke by color analysis"""
+        hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
         
-        # Smoke: Low saturation, medium-high value
+        # Gray/white smoke
         lower_smoke = np.array([0, 0, 100])
-        upper_smoke = np.array([255, 50, 255])
+        upper_smoke = np.array([180, 50, 255])
         
-        smoke_mask = cv2.inRange(hsv, lower_smoke, upper_smoke)
+        mask = cv2.inRange(hsv, lower_smoke, upper_smoke)
+        smoke_percentage = np.sum(mask > 0) / mask.size * 100
         
-        # Remove small noise
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
-        smoke_mask = cv2.morphologyEx(smoke_mask, cv2.MORPH_CLOSE, kernel)
-        
-        return smoke_mask
+        return smoke_percentage
     
     @staticmethod
-    def find_smoke_contours(smoke_mask, min_area=100):
-        """Find smoke regions"""
-        contours, _ = cv2.findContours(smoke_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    def detect_smoke_motion(frame1, frame2):
+        """Motion-based smoke detection"""
+        diff = cv2.absdiff(frame1, frame2)
+        gray_diff = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
         
-        detected_regions = []
-        for contour in contours:
-            area = cv2.contourArea(contour)
-            if area > min_area:
-                x, y, w, h = cv2.boundingRect(contour)
-                detected_regions.append((x, y, w, h))
+        _, motion_mask = cv2.threshold(gray_diff, 30, 255, cv2.THRESH_BINARY)
+        motion_percentage = np.sum(motion_mask > 0) / motion_mask.size * 100
         
-        return detected_regions
+        return motion_percentage
 ```
 
-## 📍 Geographic Localization
+## 🌍 Geolocation
 
 ```python
-class GeoLocalization:
-    """Map fire locations using GPS/coordinates"""
+class GeoLocationService:
+    """Convert pixel coordinates to GPS"""
     
-    def __init__(self, satellite_bounds):
-        """
-        satellite_bounds: (lon_min, lon_max, lat_min, lat_max)
-        """
-        self.bounds = satellite_bounds
+    def __init__(self, satellite_metadata):
+        self.lat_min = satellite_metadata['lat_min']
+        self.lat_max = satellite_metadata['lat_max']
+        self.lon_min = satellite_metadata['lon_min']
+        self.lon_max = satellite_metadata['lon_max']
+        self.image_height = satellite_metadata['image_height']
+        self.image_width = satellite_metadata['image_width']
     
-    def pixel_to_geo_coords(self, pixel_x, pixel_y, image_shape):
-        """Convert pixel coordinates to lat/lon"""
-        img_height, img_width = image_shape
-        
-        lon_min, lon_max, lat_min, lat_max = self.bounds
-        
-        # Map pixel to geographic coordinates
-        lon = lon_min + (pixel_x / img_width) * (lon_max - lon_min)
-        lat = lat_max - (pixel_y / img_height) * (lat_max - lat_min)
+    def pixel_to_gps(self, pixel_x, pixel_y):
+        """Convert pixel to coordinates"""
+        lat = self.lat_max - (pixel_y / self.image_height) * (self.lat_max - self.lat_min)
+        lon = self.lon_min + (pixel_x / self.image_width) * (self.lon_max - self.lon_min)
         
         return lat, lon
-    
-    def generate_alerts(self, detections, image_shape):
-        """Generate location-based alerts"""
-        alerts = []
-        
-        for det in detections:
-            pixel_x, pixel_y = det[:2]
-            lat, lon = self.pixel_to_geo_coords(pixel_x, pixel_y, image_shape)
-            
-            alert = {
-                'latitude': lat,
-                'longitude': lon,
-                'confidence': det[4] if len(det) > 4 else None
-            }
-            alerts.append(alert)
-        
-        return alerts
 ```
 
-## 🚨 Alert & Monitoring System
+## 🚨 Real-Time Alert System
 
 ```python
 class FireAlertSystem:
-    """Real-time monitoring and alerts"""
+    """Alert generation"""
     
-    def __init__(self, confidence_threshold=0.7):
-        self.threshold = confidence_threshold
-        self.alerts_history = []
+    def __init__(self):
+        self.alert_threshold = 0.7  # 70% fire confidence
     
-    def process_image(self, image, detector_model):
-        """Process incoming image"""
-        # Predict
-        prediction = detector_model.predict(np.expand_dims(image, 0))
-        
-        # Generate alert if fire detected
-        if prediction[0][0] > self.threshold:
-            alert = {
-                'timestamp': pd.Timestamp.now(),
-                'confidence': float(prediction[0][0]),
-                'status': 'FIRE DETECTED'
+    def generate_alert(self, detection, gps_coords):
+        """Create alert"""
+        if detection['confidence'] > self.alert_threshold:
+            return {
+                'severity': self._calculate_severity(detection['area']),
+                'latitude': gps_coords[0],
+                'longitude': gps_coords[1],
+                'confidence': detection['confidence'],
+                'timestamp': datetime.utcnow(),
+                'action': 'Contact emergency services'
             }
-            self.alerts_history.append(alert)
-            return alert
         
         return None
     
-    def send_alert(self, alert, channels=['email', 'sms', 'push']):
-        """Send multi-channel alert"""
-        for channel in channels:
-            if channel == 'email':
-                # Email notification
-                pass
-            elif channel == 'sms':
-                # SMS notification
-                pass
-            elif channel == 'push':
-                # Push notification
-                pass
-```
-
-## 📊 Model Training
-
-```python
-class WildfireTrainer:
-    """Train detection model"""
-    
-    def __init__(self, model):
-        self.model = model
-    
-    def train(self, train_gen, val_gen, epochs=50):
-        """Train with generators"""
-        callbacks = [
-            keras.callbacks.EarlyStopping(
-                monitor='val_loss', 
-                patience=5,
-                restore_best_weights=True
-            ),
-            keras.callbacks.ReduceLROnPlateau(
-                monitor='val_loss',
-                factor=0.5,
-                patience=3
-            ),
-            keras.callbacks.ModelCheckpoint(
-                'best_fire_detector.h5',
-                monitor='val_accuracy',
-                save_best_only=True
-            )
-        ]
-        
-        history = self.model.fit(
-            train_gen,
-            validation_data=val_gen,
-            epochs=epochs,
-            callbacks=callbacks
-        )
-        
-        return history
+    def _calculate_severity(self, area):
+        """Severity based on fire area"""
+        if area < 1000:
+            return 'LOW'
+        elif area < 5000:
+            return 'MEDIUM'
+        else:
+            return 'HIGH'
 ```
 
 ## 💡 Interview Talking Points
 
-**Q: Why critical for early detection?**
+**Q: Why use transfer learning?**
 ```
 Answer:
-- Minutes matter in wildfire prevention
-- Quick response maximizes containment
-- Reduces property/life loss
-- AI enables 24/7 monitoring
+- Limited satellite fire data
+- ResNet50/MobileNet pre-trained on ImageNet
+- Faster training, better accuracy
+- Can fine-tune with small dataset
 ```
 
-**Q: Challenges in this domain?**
+**Q: Real-time inference challenges?**
 ```
 Answer:
-- Variable conditions (weather, time of day)
-- Class imbalance (few fire images)
-- Real-time processing requirements
-- Geographic variation
+- Large satellite images
+- Multiple model inference stages
+- Network latency issues
+- MobileNet lighter than ResNet
+- Edge deployment considerations
 ```
 
 ## 🌟 Portfolio Value
 
-✅ CNN for fire detection
-✅ Object detection & localization
-✅ Smoke pattern recognition
-✅ Real-time processing
-✅ Geographic information systems
-✅ Critical infrastructure application
-✅ Alert system design
+✅ Computer vision fundamentals
+✅ CNN architectures
+✅ Transfer learning
+✅ Object detection
+✅ Real-time systems
+✅ Geospatial data
+✅ Critical infrastructure
 
 ---
 
-**Technologies**: TensorFlow, Keras, OpenCV, NumPy
+**Technologies**: TensorFlow, OpenCV, YOLO, NumPy
 
